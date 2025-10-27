@@ -1,0 +1,186 @@
+:root {
+  /* Brand Colors */
+  --background: oklch(0.9850 0.0050 85);
+  --foreground: oklch(0.2000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.2000 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.2000 0 0);
+
+  /* Primary - Teal #0D7A6C */
+  --primary: oklch(0.4800 0.0950 180);
+  --primary-foreground: oklch(1.0000 0 0);
+  --primary-hover: oklch(0.4100 0.0950 180);
+
+  /* Secondary - Sun Yellow #FFB400 */
+  --secondary: oklch(0.8000 0.1500 85);
+  --secondary-foreground: oklch(0.2000 0 0);
+
+  /* Accent - Light Sand #E1E5E3 */
+  --accent: oklch(0.9200 0.0100 150);
+  --accent-foreground: oklch(0.2000 0 0);
+
+  /* Muted/Surface States */
+  --muted: oklch(0.9700 0.0050 85);
+  --muted-foreground: oklch(0.5000 0 0);
+
+  /* Border & Input */
+  --border: oklch(0.9000 0.0050 150);
+  --input: oklch(0.9000 0.0050 150);
+  --ring: oklch(0.4800 0.0950 180);
+
+  /* Text Colors */
+  --text-primary: oklch(0.2000 0 0);
+  --text-secondary: oklch(0.5000 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.5500 0.2200 25);
+  --destructive-foreground: oklch(1.0000 0 0);
+
+  /* Chart Colors (surf-inspired palette) */
+  --chart-1: oklch(0.4800 0.0950 180);
+  --chart-2: oklch(0.8000 0.1500 85);
+  --chart-3: oklch(0.6000 0.1200 200);
+  --chart-4: oklch(0.7000 0.1000 160);
+  --chart-5: oklch(0.5500 0.0800 220);
+
+  /* Sidebar (if needed) */
+  --sidebar: oklch(0.9850 0.0050 85);
+  --sidebar-foreground: oklch(0.2000 0 0);
+  --sidebar-primary: oklch(0.4800 0.0950 180);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.9200 0.0100 150);
+  --sidebar-accent-foreground: oklch(0.2000 0 0);
+  --sidebar-border: oklch(0.9000 0.0050 150);
+  --sidebar-ring: oklch(0.4800 0.0950 180);
+
+  /* Typography - Surf Work Fonts */
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: ui-serif, Georgia, serif;
+  --font-mono: ui-monospace, monospace;
+  --font-heading: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  /* Border Radius - 8px base */
+  --radius: 0.5rem;
+
+  /* Shadows - Subtle, tactile feel */
+  --shadow-2xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.03);
+  --shadow-xs: 0px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.08), 0px 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.06), 0px 1px 2px -1px hsl(0 0% 0% / 0.06);
+  --shadow-md: 0px 4px 6px -1px hsl(0 0% 0% / 0.08), 0px 2px 4px -2px hsl(0 0% 0% / 0.08);
+  --shadow-lg: 0px 8px 12px -2px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 16px 24px -4px hsl(0 0% 0% / 0.12), 0px 8px 12px -4px hsl(0 0% 0% / 0.12);
+  --shadow-2xl: 0px 24px 48px -8px hsl(0 0% 0% / 0.16);
+
+  /* Tracking */
+  --tracking-normal: 0em;
+  --tracking-tight: -0.01em;
+  --tracking-wide: 0.02em;
+
+  /* Spacing - 8px grid system */
+  --spacing: 0.5rem;
+
+  /* Radius variations */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
+}
+
+/* Google Fonts Import */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* Base Typography Styles */
+body {
+  font-family: var(--font-sans) !important;
+  color: var(--text-primary) !important;
+  background-color: var(--background) !important;
+  line-height: 1.6 !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading) !important;
+  font-weight: 600 !important;
+  letter-spacing: var(--tracking-tight) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Utility classes for Surf Work design system */
+.text-primary {
+  color: var(--text-primary) !important;
+}
+
+.text-secondary {
+  color: var(--text-secondary) !important;
+}
+
+.bg-surface {
+  background-color: var(--card) !important;
+}
+
+.bg-sand {
+  background-color: var(--background) !important;
+}
+
+.border-default {
+  border-color: var(--border) !important;
+}
+
+/* Input hover effect - subtle lift */
+input:hover,
+textarea:hover,
+select:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+  transition: all 150ms ease-out;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  transform: translateY(0);
+  box-shadow: 0 0 0 2px var(--ring);
+  transition: all 150ms ease-out;
+}
+
+/* Button base styles */
+button {
+  transition: all 150ms ease-out;
+  border-radius: var(--radius-md);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all 150ms ease-out;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Card styles */
+.card {
+  background-color: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem;
+  box-shadow: var(--shadow-xs);
+}
+
+/* Surf Work microcopy style */
+.microcopy {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+  letter-spacing: var(--tracking-normal);
+}
