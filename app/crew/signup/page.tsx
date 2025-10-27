@@ -231,7 +231,7 @@ export default function CrewSignupPage() {
                   placeholder="e.g. Sarah"
                 />
                 {errors.first_name && touchedFields.first_name && (
-                  <p className="text-sm text-red-600 mt-1">
+                  <p className="text-sm text-red-600 mt-1" role="alert">
                     {errors.first_name.message}
                   </p>
                 )}
@@ -245,7 +245,7 @@ export default function CrewSignupPage() {
                   placeholder="e.g. Johnson"
                 />
                 {errors.last_name && touchedFields.last_name && (
-                  <p className="text-sm text-red-600 mt-1">
+                  <p className="text-sm text-red-600 mt-1" role="alert">
                     {errors.last_name.message}
                   </p>
                 )}
@@ -254,9 +254,9 @@ export default function CrewSignupPage() {
 
             {/* Country */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label htmlFor="country">Where are you based right now?</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <Select onValueChange={(value) => setValue("country", value)}>
                 <SelectTrigger className="mt-1">
@@ -274,9 +274,9 @@ export default function CrewSignupPage() {
 
             {/* Bio */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label htmlFor="bio">Tell us about yourself</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <Textarea
                 id="bio"
@@ -291,14 +291,23 @@ export default function CrewSignupPage() {
 
             {/* Avatar Upload */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label>Profile Photo</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <div className="mt-2 flex items-center gap-4">
                 <div
-                  className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-ocean-400 transition-colors overflow-hidden"
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload profile photo"
+                  className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-ocean-400 focus-visible:border-ocean-500 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 transition-colors overflow-hidden outline-none"
                   onClick={() => fileInputRef.current?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      fileInputRef.current?.click();
+                    }
+                  }}
                 >
                   {avatarPreview ? (
                     <img
@@ -345,15 +354,17 @@ export default function CrewSignupPage() {
             </h2>
 
             {/* Roles */}
-            <div>
-              <Label>What&apos;s your role? *</Label>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <fieldset>
+              <legend className="text-sm font-medium text-gray-900 mb-2">What&apos;s your role? *</legend>
+              <div className="flex flex-wrap gap-2">
                 {ROLE_OPTIONS.map((role) => (
                   <button
                     key={role.value}
                     type="button"
+                    role="button"
+                    aria-pressed={selectedRoles.includes(role.value)}
                     onClick={() => toggleRole(role.value)}
-                    className={`px-4 py-2 rounded-full border-2 transition-colors ${
+                    className={`px-4 py-2 rounded-full border-2 transition-colors focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 outline-none ${
                       selectedRoles.includes(role.value)
                         ? "border-ocean-500 bg-ocean-50 text-ocean-700 font-medium"
                         : "border-gray-300 hover:border-ocean-300"
@@ -364,17 +375,17 @@ export default function CrewSignupPage() {
                 ))}
               </div>
               {errors.roles && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-sm text-red-600 mt-1" role="alert">
                   {errors.roles.message}
                 </p>
               )}
-            </div>
+            </fieldset>
 
             {/* Skills */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label htmlFor="skillInput">Your skills & certifications</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <div className="mt-1 flex gap-2">
                 <Input
@@ -404,7 +415,8 @@ export default function CrewSignupPage() {
                       <button
                         type="button"
                         onClick={() => removeSkill(skill)}
-                        className="hover:text-ocean-900"
+                        aria-label={`Remove ${skill}`}
+                        className="hover:text-ocean-900 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-1 rounded outline-none"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -416,9 +428,9 @@ export default function CrewSignupPage() {
 
             {/* Portfolio Links */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label>Show your work (links to portfolio, social media)</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <Input
                 {...register("links.instagram")}
@@ -441,9 +453,9 @@ export default function CrewSignupPage() {
 
             {/* About Your Work */}
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Label htmlFor="about">Tell us about your work experience</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <Textarea
                 id="about"
@@ -459,11 +471,11 @@ export default function CrewSignupPage() {
             </div>
 
             {/* Availability */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Label htmlFor="availability_start">When can you start?</Label>
-                  <Badge variant="secondary" className="text-xs">Optional</Badge>
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
                 </div>
                 <Input
                   id="availability_start"
@@ -473,9 +485,9 @@ export default function CrewSignupPage() {
                 />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Label htmlFor="availability_end">Until when?</Label>
-                  <Badge variant="secondary" className="text-xs">Optional</Badge>
+                  <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
                 </div>
                 <Input
                   id="availability_end"
@@ -487,18 +499,20 @@ export default function CrewSignupPage() {
             </div>
 
             {/* Preferred Regions */}
-            <div>
-              <div className="flex items-center gap-2">
-                <Label>Where would you like to work?</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+            <fieldset>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <legend className="text-sm font-medium text-gray-900">Where would you like to work?</legend>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {REGION_OPTIONS.map((region) => (
                   <button
                     key={region}
                     type="button"
+                    role="button"
+                    aria-pressed={selectedRegions.includes(region)}
                     onClick={() => toggleRegion(region)}
-                    className={`px-4 py-2 rounded-full border-2 transition-colors ${
+                    className={`px-4 py-2 rounded-full border-2 transition-colors focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 outline-none ${
                       selectedRegions.includes(region)
                         ? "border-ocean-500 bg-ocean-50 text-ocean-700 font-medium"
                         : "border-gray-300 hover:border-ocean-300"
@@ -508,21 +522,23 @@ export default function CrewSignupPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {/* Open To */}
-            <div>
-              <div className="flex items-center gap-2">
-                <Label>What type of compensation are you open to?</Label>
-                <Badge variant="secondary" className="text-xs">Optional</Badge>
+            <fieldset>
+              <div className="flex items-center gap-2 flex-wrap mb-2">
+                <legend className="text-sm font-medium text-gray-900">What type of compensation are you open to?</legend>
+                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2">
                 {COMPENSATION_OPTIONS.map((comp) => (
                   <button
                     key={comp.value}
                     type="button"
+                    role="button"
+                    aria-pressed={selectedCompensation.includes(comp.value)}
                     onClick={() => toggleCompensation(comp.value)}
-                    className={`px-4 py-2 rounded-full border-2 transition-colors ${
+                    className={`px-4 py-2 rounded-full border-2 transition-colors focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 outline-none ${
                       selectedCompensation.includes(comp.value)
                         ? "border-ocean-500 bg-ocean-50 text-ocean-700 font-medium"
                         : "border-gray-300 hover:border-ocean-300"
@@ -532,7 +548,7 @@ export default function CrewSignupPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {/* Pitch */}
             <div className="border-t pt-6 mt-6">
@@ -551,7 +567,7 @@ export default function CrewSignupPage() {
                     maxLength={80}
                   />
                   {errors.pitch_title && (
-                    <p className="text-sm text-red-600 mt-1">
+                    <p className="text-sm text-red-600 mt-1" role="alert">
                       {errors.pitch_title.message}
                     </p>
                   )}
@@ -568,7 +584,7 @@ export default function CrewSignupPage() {
                     maxLength={800}
                   />
                   {errors.pitch_description && (
-                    <p className="text-sm text-red-600 mt-1">
+                    <p className="text-sm text-red-600 mt-1" role="alert">
                       {errors.pitch_description.message}
                     </p>
                   )}
@@ -598,7 +614,7 @@ export default function CrewSignupPage() {
                     </SelectContent>
                   </Select>
                   {errors.contact_method && (
-                    <p className="text-sm text-red-600 mt-1">
+                    <p className="text-sm text-red-600 mt-1" role="alert">
                       {errors.contact_method.message}
                     </p>
                   )}
@@ -613,22 +629,24 @@ export default function CrewSignupPage() {
                     placeholder="Email, phone, or link"
                   />
                   {errors.contact_value && (
-                    <p className="text-sm text-red-600 mt-1">
+                    <p className="text-sm text-red-600 mt-1" role="alert">
                       {errors.contact_value.message}
                     </p>
                   )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="is_public"
-                    {...register("is_public")}
-                    className="rounded border-gray-300"
-                  />
-                  <Label htmlFor="is_public" className="cursor-pointer">
-                    Make my profile publicly visible
-                  </Label>
+                  <label htmlFor="is_public" className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      id="is_public"
+                      {...register("is_public")}
+                      className="rounded border-gray-300 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2"
+                    />
+                    <span className="text-sm font-medium text-gray-900">
+                      Make my profile publicly visible
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -650,7 +668,7 @@ export default function CrewSignupPage() {
                 placeholder="your@email.com"
               />
               {errors.email && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-sm text-red-600 mt-1" role="alert">
                   {errors.email.message}
                 </p>
               )}
@@ -666,7 +684,7 @@ export default function CrewSignupPage() {
                 placeholder="At least 8 characters"
               />
               {errors.password && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-sm text-red-600 mt-1" role="alert">
                   {errors.password.message}
                 </p>
               )}
@@ -682,7 +700,7 @@ export default function CrewSignupPage() {
                 placeholder="Re-enter your password"
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-red-600 mt-1">
+                <p className="text-sm text-red-600 mt-1" role="alert">
                   {errors.confirmPassword.message}
                 </p>
               )}
