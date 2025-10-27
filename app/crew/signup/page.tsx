@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -227,7 +228,7 @@ export default function CrewSignupPage() {
                   id="first_name"
                   {...register("first_name")}
                   className="mt-1"
-                  placeholder="Your first name"
+                  placeholder="e.g. Sarah"
                 />
                 {errors.first_name && touchedFields.first_name && (
                   <p className="text-sm text-red-600 mt-1">
@@ -241,7 +242,7 @@ export default function CrewSignupPage() {
                   id="last_name"
                   {...register("last_name")}
                   className="mt-1"
-                  placeholder="Your last name"
+                  placeholder="e.g. Johnson"
                 />
                 {errors.last_name && touchedFields.last_name && (
                   <p className="text-sm text-red-600 mt-1">
@@ -253,10 +254,13 @@ export default function CrewSignupPage() {
 
             {/* Country */}
             <div>
-              <Label htmlFor="country">Country</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="country">Where are you based right now?</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <Select onValueChange={(value) => setValue("country", value)}>
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select your country" />
+                  <SelectValue placeholder="Select your current location" />
                 </SelectTrigger>
                 <SelectContent>
                   {COUNTRIES.map((country) => (
@@ -270,12 +274,15 @@ export default function CrewSignupPage() {
 
             {/* Bio */}
             <div>
-              <Label htmlFor="bio">Short Bio</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="bio">Tell us about yourself</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <Textarea
                 id="bio"
                 {...register("bio")}
                 className="mt-1"
-                placeholder="Tell us a bit about yourself..."
+                placeholder="e.g. ISA certified surf instructor with 5 years experience teaching all levels. Passionate about ocean conservation and creating fun, safe learning environments..."
                 rows={3}
                 maxLength={600}
               />
@@ -284,7 +291,10 @@ export default function CrewSignupPage() {
 
             {/* Avatar Upload */}
             <div>
-              <Label>Profile Photo</Label>
+              <div className="flex items-center gap-2">
+                <Label>Profile Photo</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <div className="mt-2 flex items-center gap-4">
                 <div
                   className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-ocean-400 transition-colors overflow-hidden"
@@ -362,7 +372,10 @@ export default function CrewSignupPage() {
 
             {/* Skills */}
             <div>
-              <Label htmlFor="skillInput">Skills</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="skillInput">Your skills & certifications</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <div className="mt-1 flex gap-2">
                 <Input
                   id="skillInput"
@@ -374,7 +387,7 @@ export default function CrewSignupPage() {
                       addSkill();
                     }
                   }}
-                  placeholder="e.g. ISA Certified, First Aid, Video Editing"
+                  placeholder="e.g. ISA Level 2, Lifeguard, First Aid CPR, GoPro filming"
                 />
                 <Button type="button" onClick={addSkill} variant="outline">
                   Add
@@ -403,37 +416,40 @@ export default function CrewSignupPage() {
 
             {/* Portfolio Links */}
             <div className="space-y-3">
-              <Label>Portfolio & Links</Label>
+              <div className="flex items-center gap-2">
+                <Label>Show your work (links to portfolio, social media)</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <Input
                 {...register("links.instagram")}
-                placeholder="Instagram URL"
+                placeholder="https://instagram.com/your_handle"
                 className="mt-1"
               />
               <Input
                 {...register("links.portfolio")}
-                placeholder="Portfolio URL"
-                className="mt-1"
+                placeholder="https://yourportfolio.com"
               />
               <Input
                 {...register("links.site")}
-                placeholder="Website URL"
-                className="mt-1"
+                placeholder="https://yourwebsite.com"
               />
               <Input
                 {...register("links.whatsapp")}
-                placeholder="WhatsApp number"
-                className="mt-1"
+                placeholder="+351 912 345 678"
               />
             </div>
 
             {/* About Your Work */}
             <div>
-              <Label htmlFor="about">About Your Work</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="about">Tell us about your work experience</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <Textarea
                 id="about"
                 {...register("about")}
                 className="mt-1"
-                placeholder="Describe your experience and what you bring to the team..."
+                placeholder="e.g. I've been teaching surf for 6 years across Portugal and Morocco. Started as a beach assistant and worked my way up to head coach. I love working with beginners and seeing their first waves. Also experienced in camp operations and social media content creation..."
                 rows={4}
                 maxLength={1500}
               />
@@ -445,7 +461,10 @@ export default function CrewSignupPage() {
             {/* Availability */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="availability_start">Available From</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="availability_start">When can you start?</Label>
+                  <Badge variant="secondary" className="text-xs">Optional</Badge>
+                </div>
                 <Input
                   id="availability_start"
                   type="date"
@@ -454,7 +473,10 @@ export default function CrewSignupPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="availability_end">Until</Label>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="availability_end">Until when?</Label>
+                  <Badge variant="secondary" className="text-xs">Optional</Badge>
+                </div>
                 <Input
                   id="availability_end"
                   type="date"
@@ -466,7 +488,10 @@ export default function CrewSignupPage() {
 
             {/* Preferred Regions */}
             <div>
-              <Label>Preferred Regions</Label>
+              <div className="flex items-center gap-2">
+                <Label>Where would you like to work?</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {REGION_OPTIONS.map((region) => (
                   <button
@@ -487,7 +512,10 @@ export default function CrewSignupPage() {
 
             {/* Open To */}
             <div>
-              <Label>Open To</Label>
+              <div className="flex items-center gap-2">
+                <Label>What type of compensation are you open to?</Label>
+                <Badge variant="secondary" className="text-xs">Optional</Badge>
+              </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {COMPENSATION_OPTIONS.map((comp) => (
                   <button
