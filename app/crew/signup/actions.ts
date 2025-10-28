@@ -5,44 +5,72 @@
 
 "use server";
 
-import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { generateUniqueSlug } from "@/lib/utils/slug";
+import {
+  validatePassword,
+  createAuthAccount,
+  handleAuthError,
+  handleDatabaseError,
+} from "@/lib/auth/signup-helpers";
+import { errorTracker } from "@/lib/utils/error-tracking";
+import { uploadAvatar } from "@/lib/storage/upload-helpers";
 import type { CrewSignupFormData } from "@/lib/validations/crew-signup";
 
-export async function crewSignup(data: CrewSignupFormData) {
+export { uploadAvatar };
+
+type SignupSuccess = {
+  success: true;
+  userId: string;
+  slug: string;
+  usingMagicLink: boolean;
+  email: string;
+  organizationId?: string; // Present for organization signup
+};
+
+type SignupError = {
+  success?: false;
+  error: string;
+};
+
+export type SignupResult = SignupSuccess | SignupError;
+
+export async function crewSignup(data: CrewSignupFormData): Promise<SignupResult> {
   try {
-    // Use regular client for auth operations
-    const supabase = await createClient();
     // Use service role client for database operations (bypasses RLS)
     const supabaseAdmin = createServiceRoleClient();
 
-    // 1. Create auth account
-    const password = data.password && data.password !== "" ? data.password : crypto.randomUUID();
+    // Track if using magic link (no password provided)
+    const usingMagicLink = !data.password || data.password === "";
 
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // 1. Validate password before attempting auth signup
+    const passwordError = validatePassword(data.password);
+    if (passwordError) {
+      return { error: passwordError };
+    }
+
+    // 2. Create auth account
+    const { data: authData, error: authError } = await createAuthAccount({
       email: data.email,
-      password: password,
-      options: {
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
-      },
+      password: data.password,
     });
 
     if (authError) {
-      console.error("[crewSignup] Auth error:", authError);
-      return { error: authError.message };
+      errorTracker.logError("Auth error during crew signup", { error: authError, email: data.email });
+      return { error: handleAuthError(authError) };
     }
 
-    if (!authData.user) {
+    if (!authData?.user) {
       return { error: "Failed to create account" };
     }
 
     const userId = authData.user.id;
 
-    // 2. Generate unique slug from first + last name
+    // 3. Generate unique slug from first + last name
     const displayName = `${data.first_name} ${data.last_name}`;
-    const slug = await generateUniqueSlug(displayName);
+    const slug = await generateUniqueSlug(displayName, supabaseAdmin);
 
-    // 3. Create/update profile (using service role to bypass RLS)
+    // 4. Create/update profile (using service role to bypass RLS)
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert({
@@ -60,16 +88,15 @@ export async function crewSignup(data: CrewSignupFormData) {
         skills: data.skills || [],
         links: data.links || null,
         about: data.about || null,
-        onboarding_completed: true,
       })
       .eq("id", userId);
 
     if (profileError) {
       console.error("[crewSignup] Profile error:", profileError);
-      return { error: `Profile creation failed: ${profileError.message}` };
+      return { error: handleDatabaseError(profileError, "profile creation") };
     }
 
-    // 4. Insert roles (multiple rows, using service role)
+    // 5. Insert roles (multiple rows, using service role)
     if (data.roles && data.roles.length > 0) {
       const roleRows = data.roles.map((role) => ({
         profile_id: userId,
@@ -82,11 +109,11 @@ export async function crewSignup(data: CrewSignupFormData) {
 
       if (rolesError) {
         console.error("[crewSignup] Roles error:", rolesError);
-        // Non-fatal - continue with signup
+        return { error: handleDatabaseError(rolesError, "role assignment") };
       }
     }
 
-    // 5. Create candidate pitch (using service role to bypass RLS)
+    // 6. Create candidate pitch (using service role to bypass RLS)
     const { error: pitchError } = await supabaseAdmin
       .from("candidate_pitches")
       .insert({
@@ -106,70 +133,20 @@ export async function crewSignup(data: CrewSignupFormData) {
 
     if (pitchError) {
       console.error("[crewSignup] Pitch error:", pitchError);
-      // Non-fatal - continue with signup
+      return { error: handleDatabaseError(pitchError, "pitch creation") };
     }
 
     return {
-      success: true,
+      success: true as const,
       userId: userId,
       slug: slug,
+      usingMagicLink: usingMagicLink,
+      email: data.email,
     };
   } catch (error) {
-    console.error("[crewSignup] Unexpected error:", error);
+    errorTracker.logError("Unexpected error during crew signup", { error, email: data.email });
     return {
       error: error instanceof Error ? error.message : "An unexpected error occurred",
-    };
-  }
-}
-
-/**
- * Upload avatar image to Supabase Storage
- */
-export async function uploadAvatar(
-  file: File,
-  profileId: string
-): Promise<{ url?: string; error?: string }> {
-  try {
-    const supabase = await createClient();
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      return { error: "File must be an image" };
-    }
-
-    // Validate file size (2MB limit)
-    if (file.size > 2 * 1024 * 1024) {
-      return { error: "Image must be less than 2MB" };
-    }
-
-    // Generate unique filename
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${profileId}/avatar.${fileExt}`;
-    const filePath = `profiles/${fileName}`;
-
-    // Upload to storage
-    const { error: uploadError } = await supabase.storage
-      .from("public")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: true,
-      });
-
-    if (uploadError) {
-      console.error("[uploadAvatar] Upload error:", uploadError);
-      return { error: uploadError.message };
-    }
-
-    // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("public").getPublicUrl(filePath);
-
-    return { url: publicUrl };
-  } catch (error) {
-    console.error("[uploadAvatar] Unexpected error:", error);
-    return {
-      error: error instanceof Error ? error.message : "Failed to upload avatar",
     };
   }
 }

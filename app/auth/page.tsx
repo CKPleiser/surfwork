@@ -1,245 +1,325 @@
+/**
+ * Signin Page
+ * Unified signin for crew and organization accounts
+ */
+
 "use client";
 
-import { Auth } from "@supabase/auth-ui-react";
-import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { createClient } from "@/lib/supabase/client";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Eye, EyeOff, Mail } from "lucide-react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { signInWithPassword, signInWithMagicLink } from "@/lib/auth/signin-actions";
+import { lookupEmail } from "@/lib/utils/email-lookup";
+import { signinSchema, type SigninFormData } from "@/lib/validations/signin";
+import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/lib/query-keys";
 
-function AuthPageContent() {
-  const supabase = createClient();
+function SigninContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
+  const redirectTo = searchParams.get("redirect") || "/dashboard";
+  const urlError = searchParams.get("error");
+  const queryClient = useQueryClient();
 
-  const redirectTo = searchParams.get("redirect") || "/onboarding";
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPasswordMode, setIsPasswordMode] = useState(false);
+  const [isMagicLinkMode, setIsMagicLinkMode] = useState(false);
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [accountExists, setAccountExists] = useState<boolean | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(urlError);
 
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<SigninFormData>({
+    resolver: zodResolver(signinSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
+
+  const emailValue = watch("email");
+
+  // Check if email exists when user stops typing
   useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    const timer = setTimeout(async () => {
+      if (emailValue && emailValue.includes("@") && emailValue.includes(".")) {
+        setIsCheckingEmail(true);
+        const result = await lookupEmail(emailValue);
+        setAccountExists(result.exists);
+        setIsCheckingEmail(false);
 
-      if (session) {
-        // User is already logged in, check onboarding status
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profile?.onboarding_completed) {
-          router.push(redirectTo === "/onboarding" ? "/dashboard" : redirectTo);
-        } else {
-          router.push("/onboarding");
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-
-    checkUser();
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session) {
-        // Check onboarding status
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("onboarding_completed")
-          .eq("id", session.user.id)
-          .single();
-
-        if (profile?.onboarding_completed) {
-          router.push(redirectTo === "/onboarding" ? "/dashboard" : redirectTo);
-        } else {
-          router.push("/onboarding");
+        // If account doesn't exist, show helpful message
+        if (!result.exists) {
+          setError(null);
         }
       }
-    });
+    }, 500);
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [supabase, router, redirectTo]);
+    return () => clearTimeout(timer);
+  }, [emailValue]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+  const onSubmitPassword = async (data: SigninFormData) => {
+    setIsPending(true);
+    setError(null);
+
+    const result = await signInWithPassword(data.email, data.password, data.rememberMe || false);
+
+    if (!result.success) {
+      setError(result.error || "Sign in failed");
+      setIsPending(false);
+      return;
+    }
+
+    // Invalidate and refetch user data to ensure React Query has latest auth state
+    await queryClient.invalidateQueries({ queryKey: queryKeys.user.current() });
+
+    // Redirect to intended page or dashboard
+    router.push(result.redirectTo || redirectTo);
+  };
+
+  const onSubmitMagicLink = async () => {
+    if (!emailValue) {
+      setError("Please enter your email address");
+      return;
+    }
+
+    setIsPending(true);
+    setError(null);
+
+    const result = await signInWithMagicLink(emailValue);
+
+    if (!result.success) {
+      setError(result.error || "Failed to send magic link");
+      setIsPending(false);
+      return;
+    }
+
+    // Redirect to check email page
+    router.push(result.redirectTo || "/auth/check-email");
+  };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left Side - Auth Form */}
-      <div className="flex-1 flex flex-col">
-        <div className="p-6">
+    <div className="min-h-screen py-12 bg-gray-50">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-md">
+        {/* Header */}
+        <div className="mb-8">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-ocean-600 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to home
+            Back
           </Link>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back
+          </h1>
+          <p className="text-gray-600">
+            Sign in to your account to continue
+          </p>
         </div>
 
-        <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-          <div className="w-full max-w-md">
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-3 bg-gradient-ocean bg-clip-text text-transparent">
-                Welcome to Surf Work
-              </h1>
-              <p className="text-muted-foreground text-lg">
-                Sign in to post jobs or create your coach profile
-              </p>
-            </div>
-
-            {/* Auth UI Card */}
-            <div className="bg-white rounded-xl border-2 border-border p-8">
-              <Auth
-                supabaseClient={supabase}
-                appearance={{
-                  theme: ThemeSupa,
-                  variables: {
-                    default: {
-                      colors: {
-                        brand: "rgb(14 116 144)",
-                        brandAccent: "rgb(8 145 178)",
-                        brandButtonText: "white",
-                        defaultButtonBackground: "#FAFAF8",
-                        defaultButtonBackgroundHover: "#F0F9FF",
-                        inputBackground: "white",
-                        inputBorder: "#E0E7EF",
-                        inputBorderHover: "rgb(14 116 144)",
-                        inputBorderFocus: "rgb(8 145 178)",
-                      },
-                      space: {
-                        spaceSmall: "4px",
-                        spaceMedium: "8px",
-                        spaceLarge: "16px",
-                        labelBottomMargin: "8px",
-                        anchorBottomMargin: "4px",
-                        emailInputSpacing: "4px",
-                        socialAuthSpacing: "4px",
-                        buttonPadding: "10px 15px",
-                        inputPadding: "10px 15px",
-                      },
-                      fontSizes: {
-                        baseBodySize: "14px",
-                        baseInputSize: "14px",
-                        baseLabelSize: "14px",
-                        baseButtonSize: "14px",
-                      },
-                      borderWidths: {
-                        buttonBorderWidth: "2px",
-                        inputBorderWidth: "2px",
-                      },
-                      radii: {
-                        borderRadiusButton: "0.5rem",
-                        buttonBorderRadius: "0.5rem",
-                        inputBorderRadius: "0.5rem",
-                      },
-                    },
-                  },
-                  className: {
-                    container: "space-y-4",
-                    button: "font-semibold",
-                    input: "font-normal",
-                    label: "font-medium",
-                  },
-                }}
-                providers={[]}
-                redirectTo={`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`}
-                magicLink={true}
-                view="sign_in"
-                showLinks={true}
-                localization={{
-                  variables: {
-                    sign_in: {
-                      email_label: "Email",
-                      password_label: "Password",
-                      email_input_placeholder: "Your email address",
-                      password_input_placeholder: "Your password",
-                      button_label: "Sign in",
-                      loading_button_label: "Signing in ...",
-                      link_text: "Already have an account? Sign in",
-                    },
-                    sign_up: {
-                      email_label: "Email",
-                      password_label: "Password",
-                      email_input_placeholder: "Your email address",
-                      password_input_placeholder: "Create a password",
-                      button_label: "Sign up",
-                      loading_button_label: "Signing up ...",
-                      link_text: "Don't have an account? Sign up",
-                    },
-                    magic_link: {
-                      email_input_label: "Email address",
-                      email_input_placeholder: "Your email address",
-                      button_label: "Send Magic Link",
-                      loading_button_label: "Sending Magic Link ...",
-                      link_text: "Send a magic link email",
-                    },
-                    forgotten_password: {
-                      email_label: "Email address",
-                      password_label: "Your Password",
-                      email_input_placeholder: "Your email address",
-                      button_label: "Send reset password instructions",
-                      loading_button_label: "Sending reset instructions ...",
-                      link_text: "Forgot your password?",
-                    },
-                  },
-                }}
+        {/* Main Form */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 space-y-6">
+          <form onSubmit={handleSubmit(onSubmitPassword)} className="space-y-4">
+            {/* Email Input */}
+            <div>
+              <Label htmlFor="email">Email address *</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register("email")}
+                className="mt-1"
+                placeholder="your@email.com"
+                autoComplete="email"
+                disabled={isPasswordMode || isMagicLinkMode}
               />
+              {errors.email && (
+                <p className="text-sm text-red-600 mt-1" role="alert">
+                  {errors.email.message}
+                </p>
+              )}
+              {isCheckingEmail && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Checking account...
+                </p>
+              )}
+              {accountExists === false && emailValue && !isCheckingEmail && (
+                <p className="text-sm text-amber-600 mt-1">
+                  No account found with this email.{" "}
+                  <Link href="/crew/signup" className="text-ocean-600 hover:underline">
+                    Sign up as crew
+                  </Link>{" "}
+                  or{" "}
+                  <Link href="/organizations/signup" className="text-ocean-600 hover:underline">
+                    organization
+                  </Link>
+                  ?
+                </p>
+              )}
             </div>
 
-            {/* Footer Note */}
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              By signing up, you agree to keep the platform spam-free and authentic
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Ocean Photo with Testimonial */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-ocean">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1502680390469-be75c86b636f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920')",
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-ocean-600/80 via-ocean-500/70 to-ocean-400/60" />
-        </div>
-
-        {/* Testimonial Card */}
-        <div className="relative z-10 flex flex-col justify-end p-12 w-full">
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border-2 border-white/20 shadow-2xl">
-            <div className="mb-6">
-              <svg className="h-10 w-10 text-white/80" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-              </svg>
-            </div>
-            <p className="text-white text-xl font-medium leading-relaxed mb-6">
-              Finding qualified surf coaches has never been easier. Surf Work connected us with amazing instructors who share our passion for the ocean.
-            </p>
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-lg">
-                M
-              </div>
+            {/* Password Input (shown when in password mode or account exists) */}
+            {(isPasswordMode || (accountExists && !isMagicLinkMode)) && (
               <div>
-                <p className="text-white font-semibold">Maria Santos</p>
-                <p className="text-white/80 text-sm">Surf Camp Director, Ericeira</p>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password *</Label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-ocean-600 hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="relative mt-1">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    {...register("password")}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-red-600 mt-1" role="alert">
+                    {errors.password.message}
+                  </p>
+                )}
               </div>
+            )}
+
+            {/* Remember Me */}
+            {(isPasswordMode || (accountExists && !isMagicLinkMode)) && (
+              <div className="flex items-center space-x-2">
+                <Checkbox id="rememberMe" {...register("rememberMe")} />
+                <label
+                  htmlFor="rememberMe"
+                  className="text-sm text-gray-700 cursor-pointer"
+                >
+                  Remember me for 30 days
+                </label>
+              </div>
+            )}
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-800">{error}</p>
+              </div>
+            )}
+
+            {/* Sign In Button (Password) */}
+            {(isPasswordMode || (accountExists && !isMagicLinkMode)) && (
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={isPending || accountExists === false}
+              >
+                {isPending ? "Signing in..." : "Sign in"}
+              </Button>
+            )}
+          </form>
+
+          {/* Magic Link Option */}
+          {!isPasswordMode && (
+            <div className="space-y-4">
+              {accountExists && !isMagicLinkMode && (
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-200" />
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-white text-gray-500">Or</span>
+                  </div>
+                </div>
+              )}
+
+              {!isMagicLinkMode && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  onClick={() => {
+                    setIsMagicLinkMode(true);
+                    setIsPasswordMode(false);
+                  }}
+                  disabled={!accountExists || isPending}
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Sign in with magic link
+                </Button>
+              )}
+
+              {isMagicLinkMode && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    We&apos;ll send you a magic link to sign in without a password.
+                  </p>
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="w-full"
+                    onClick={onSubmitMagicLink}
+                    disabled={isPending || !emailValue}
+                  >
+                    {isPending ? "Sending link..." : "Send magic link"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setIsMagicLinkMode(false);
+                      setIsPasswordMode(true);
+                    }}
+                  >
+                    Use password instead
+                  </Button>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Don't have an account */}
+          <div className="pt-4 border-t border-gray-200">
+            <p className="text-sm text-gray-600 text-center">
+              Don&apos;t have an account?{" "}
+              <Link href="/crew/signup" className="text-ocean-600 hover:underline font-medium">
+                Sign up as crew
+              </Link>{" "}
+              or{" "}
+              <Link href="/organizations/signup" className="text-ocean-600 hover:underline font-medium">
+                organization
+              </Link>
+            </p>
           </div>
         </div>
       </div>
@@ -247,16 +327,27 @@ function AuthPageContent() {
   );
 }
 
-export default function AuthPage() {
+export default function SigninPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    <Suspense fallback={
+      <div className="min-h-screen py-12 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-md">
+          <div className="mb-8">
+            <div className="h-8 bg-gray-200 rounded w-48 mb-6 animate-pulse" />
+            <div className="h-10 bg-gray-200 rounded w-64 mb-2 animate-pulse" />
+            <div className="h-6 bg-gray-200 rounded w-48 animate-pulse" />
+          </div>
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8">
+            <div className="space-y-4 animate-pulse">
+              <div className="h-12 bg-gray-200 rounded" />
+              <div className="h-12 bg-gray-200 rounded" />
+              <div className="h-12 bg-gray-200 rounded" />
+            </div>
+          </div>
         </div>
-      }
-    >
-      <AuthPageContent />
+      </div>
+    }>
+      <SigninContent />
     </Suspense>
   );
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Providers } from "./providers";
+import { getUser } from "@/lib/auth/session";
 import "@/lib/env"; // Validate environment variables at startup
 
 const inter = Inter({
@@ -37,11 +38,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read user from server-side session (zero delay, cached per-request)
+  const user = await getUser();
+
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-screen flex flex-col bg-background">
@@ -54,7 +58,7 @@ export default function RootLayout({
         />
 
         <Providers>
-          <Navbar />
+          <Navbar user={user} />
 
           <main className="flex-1 relative z-0">
             {children}

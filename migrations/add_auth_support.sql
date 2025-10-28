@@ -4,7 +4,6 @@
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS email text UNIQUE,
 ADD COLUMN IF NOT EXISTS slug text UNIQUE,
-ADD COLUMN IF NOT EXISTS onboarding_completed boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS is_admin boolean DEFAULT false;
 
 -- Create index on email for faster lookups
@@ -70,14 +69,13 @@ BEGIN
   user_slug := generate_unique_slug(user_name);
 
   -- Create profile record
-  INSERT INTO public.profiles (id, kind, display_name, email, slug, onboarding_completed)
+  INSERT INTO public.profiles (id, kind, display_name, email, slug)
   VALUES (
     new.id,
     'person', -- default, user can change during onboarding
     user_name,
     new.email,
-    user_slug,
-    false -- user needs to complete onboarding
+    user_slug
   );
 
   RETURN new;
@@ -110,5 +108,4 @@ END $$;
 -- Comments for documentation
 COMMENT ON COLUMN profiles.email IS 'User email from auth.users, unique identifier for login';
 COMMENT ON COLUMN profiles.slug IS 'URL-friendly identifier for profile pages (/p/[slug])';
-COMMENT ON COLUMN profiles.onboarding_completed IS 'Whether user has completed post-signup onboarding flow';
 COMMENT ON COLUMN profiles.is_admin IS 'Admin flag for moderation dashboard access';

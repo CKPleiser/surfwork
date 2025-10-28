@@ -3,7 +3,7 @@
  * Generate URL-friendly slugs from display names
  */
 
-import { createClient } from "@/lib/supabase/client";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Convert a string to a URL-friendly slug
@@ -26,11 +26,14 @@ export function slugify(text: string): string {
 
 /**
  * Check if a slug is available in the database
+ * @param slug Slug to check
+ * @param supabaseClient Supabase client (browser or server)
  */
-export async function isSlugAvailable(slug: string): Promise<boolean> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
+export async function isSlugAvailable(
+  slug: string,
+  supabaseClient: SupabaseClient
+): Promise<boolean> {
+  const { data, error } = await supabaseClient
     .from("profiles")
     .select("slug")
     .eq("slug", slug)
@@ -47,12 +50,17 @@ export async function isSlugAvailable(slug: string): Promise<boolean> {
 /**
  * Generate a unique slug from a display name
  * If the base slug exists, append a number
+ * @param displayName Display name to convert to slug
+ * @param supabaseClient Supabase client (browser or server)
  */
-export async function generateUniqueSlug(displayName: string): Promise<string> {
+export async function generateUniqueSlug(
+  displayName: string,
+  supabaseClient: SupabaseClient
+): Promise<string> {
   const baseSlug = slugify(displayName);
 
   // Check if base slug is available
-  if (await isSlugAvailable(baseSlug)) {
+  if (await isSlugAvailable(baseSlug, supabaseClient)) {
     return baseSlug;
   }
 
@@ -60,7 +68,7 @@ export async function generateUniqueSlug(displayName: string): Promise<string> {
   let counter = 1;
   let candidateSlug = `${baseSlug}-${counter}`;
 
-  while (!(await isSlugAvailable(candidateSlug))) {
+  while (!(await isSlugAvailable(candidateSlug, supabaseClient))) {
     counter++;
     candidateSlug = `${baseSlug}-${counter}`;
 

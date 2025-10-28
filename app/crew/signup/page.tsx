@@ -5,11 +5,11 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Upload, X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,13 +22,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCrewSignup } from "@/lib/mutations/useCrewSignup";
+import { useCrewSignup } from "@/lib/mutations/useSignup";
 import {
   crewSignupSchema,
   type CrewSignupFormData,
 } from "@/lib/validations/crew-signup";
 import { COUNTRIES } from "@/lib/constants";
+import { FormSection } from "@/components/forms/FormSection";
+import { PasswordFields } from "@/components/forms/PasswordFields";
+import { FileUploadButton } from "@/components/forms/FileUploadButton";
+import { OptionalBadge } from "@/components/forms/OptionalBadge";
 import { uploadAvatar } from "./actions";
+import { errorTracker } from "@/lib/utils/error-tracking";
 
 const ROLE_OPTIONS = [
   { value: "coach", label: "Surf Coach / Instructor" },
@@ -62,7 +67,6 @@ const COMPENSATION_OPTIONS = [
 export default function CrewSignupPage() {
   const router = useRouter();
   const { mutate: signup, isPending } = useCrewSignup();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -111,78 +115,65 @@ export default function CrewSignupPage() {
     },
   });
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be less than 2MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-    setAvatarFile(file);
-  };
-
-  const toggleRole = (role: string) => {
+  const toggleRole = useCallback((role: string) => {
     const newRoles = selectedRoles.includes(role)
       ? selectedRoles.filter((r) => r !== role)
       : [...selectedRoles, role];
     setSelectedRoles(newRoles);
     setValue("roles", newRoles as any);
-  };
+  }, [selectedRoles, setValue]);
 
-  const toggleRegion = (region: string) => {
+  const toggleRegion = useCallback((region: string) => {
     const newRegions = selectedRegions.includes(region)
       ? selectedRegions.filter((r) => r !== region)
       : [...selectedRegions, region];
     setSelectedRegions(newRegions);
     setValue("preferred_regions", newRegions);
-  };
+  }, [selectedRegions, setValue]);
 
-  const toggleCompensation = (comp: string) => {
+  const toggleCompensation = useCallback((comp: string) => {
     const newComp = selectedCompensation.includes(comp)
       ? selectedCompensation.filter((c) => c !== comp)
       : [...selectedCompensation, comp];
     setSelectedCompensation(newComp);
     setValue("open_to", newComp as any);
-  };
+  }, [selectedCompensation, setValue]);
 
-  const addSkill = () => {
+  const addSkill = useCallback(() => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
       const newSkills = [...skills, skillInput.trim()];
       setSkills(newSkills);
       setValue("skills", newSkills);
       setSkillInput("");
     }
-  };
+  }, [skillInput, skills, setValue]);
 
-  const removeSkill = (skill: string) => {
+  const removeSkill = useCallback((skill: string) => {
     const newSkills = skills.filter((s) => s !== skill);
     setSkills(newSkills);
     setValue("skills", newSkills);
-  };
+  }, [skills, setValue]);
 
   const onSubmit = async (data: CrewSignupFormData) => {
     signup(data, {
       onSuccess: async (result) => {
         if (result?.success && result.userId) {
+          // Upload avatar if provided
           if (avatarFile) {
             const uploadResult = await uploadAvatar(avatarFile, result.userId);
             if (uploadResult.error) {
-              console.error("Avatar upload failed:", uploadResult.error);
+              errorTracker.logError("Avatar upload failed", { error: uploadResult.error, userId: result.userId });
             }
           }
-          router.push("/dashboard");
+
+          // Redirect based on signup method
+          if (result.usingMagicLink) {
+            // Magic link: redirect to check-email page
+            router.push(`/auth/check-email?email=${encodeURIComponent(result.email)}`);
+          } else {
+            // Password: user is already signed in, redirect to dashboard
+            router.push("/dashboard");
+          }
         }
       },
       onError: (error) => {
@@ -215,10 +206,7 @@ export default function CrewSignupPage() {
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
           {/* About You Section */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Tell us about yourself
-            </h2>
+          <FormSection title="Tell us about yourself">
 
             {/* Name */}
             <div className="grid grid-cols-2 gap-4">
@@ -293,65 +281,28 @@ export default function CrewSignupPage() {
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <Label>Profile Photo</Label>
-                <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
+                <OptionalBadge />
               </div>
-              <div className="mt-2 flex items-center gap-4">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Upload profile photo"
-                  className="w-24 h-24 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-ocean-400 focus-visible:border-ocean-500 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2 transition-colors overflow-hidden outline-none"
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      fileInputRef.current?.click();
-                    }
+              <div className="mt-2">
+                <FileUploadButton
+                  variant="avatar"
+                  maxSizeMB={2}
+                  onFileSelect={(file, previewUrl) => {
+                    setAvatarFile(file);
+                    setAvatarPreview(previewUrl);
                   }}
-                >
-                  {avatarPreview ? (
-                    <img
-                      src={avatarPreview}
-                      alt="Avatar preview"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Upload className="h-8 w-8 text-gray-400" />
-                  )}
-                </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
+                  onFileRemove={() => {
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                  }}
+                  previewUrl={avatarPreview}
                 />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600">
-                    Upload a photo (max 2MB)
-                  </p>
-                  {avatarPreview && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAvatarPreview(null);
-                        setAvatarFile(null);
-                      }}
-                      className="text-sm text-red-600 hover:text-red-700 mt-1"
-                    >
-                      Remove photo
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
-          </div>
+          </FormSection>
 
           {/* Skills & Availability Section */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Your skills & availability
-            </h2>
+          <FormSection title="Your skills & availability">
 
             {/* Roles */}
             <fieldset>
@@ -650,13 +601,10 @@ export default function CrewSignupPage() {
                 </div>
               </div>
             </div>
-          </div>
+          </FormSection>
 
           {/* Create Account Section */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 space-y-6">
-            <h2 className="text-3xl font-bold text-gray-900">
-              Create your account
-            </h2>
+          <FormSection title="Create your account">
 
             <div>
               <Label htmlFor="email">Email *</Label>
@@ -674,38 +622,12 @@ export default function CrewSignupPage() {
               )}
             </div>
 
-            <div>
-              <Label htmlFor="password">Password *</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-                className="mt-1"
-                placeholder="At least 8 characters"
-              />
-              {errors.password && (
-                <p className="text-sm text-red-600 mt-1" role="alert">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="confirmPassword">Confirm Password *</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                {...register("confirmPassword")}
-                className="mt-1"
-                placeholder="Re-enter your password"
-              />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-600 mt-1" role="alert">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-          </div>
+            <PasswordFields
+              register={register}
+              errors={errors}
+              showRequired={true}
+            />
+          </FormSection>
 
           {/* Submit Button */}
           <div className="flex justify-end">

@@ -1,11 +1,24 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  // Only scan files that exist in your project
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  // Disable dark mode since it's not being used
+  darkMode: ['selector', '[data-disabled="true"]'], // Effectively disabled
+
+  // Disable unused core plugins to reduce CSS bundle size
+  corePlugins: {
+    container: false, // Not using Tailwind's container
+    float: false, // Modern layouts use flexbox/grid
+    clear: false, // Not needed with modern layout systems
+    placeholderColor: false, // Using native placeholder styles
+    placeholderOpacity: false,
+    verticalAlign: false, // Rarely used in modern layouts
+  },
+
   theme: {
     extend: {
       colors: {

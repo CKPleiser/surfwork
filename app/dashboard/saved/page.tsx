@@ -1,4 +1,5 @@
-import { AuthGuard } from "@/components/AuthGuard";
+import { redirect } from "next/navigation";
+import { requireAuth } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Heart, MapPin, Calendar, Briefcase } from "lucide-react";
@@ -7,16 +8,10 @@ import { SaveJobButton } from "@/components/SaveJobButton";
 import { ErrorMessage } from "@/components/ErrorMessage";
 
 async function SavedJobsContent() {
+  // Server-side auth check
+  const user = await requireAuth();
+
   const supabase = createClient();
-
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
 
   // Fetch saved jobs with job details
   const { data: savedJobs, error } = await supabase
@@ -210,10 +205,13 @@ async function SavedJobsContent() {
   );
 }
 
-export default function SavedJobsPage() {
-  return (
-    <AuthGuard>
-      <SavedJobsContent />
-    </AuthGuard>
-  );
+export default async function SavedJobsPage() {
+  // Server-side auth check - redirect if not authenticated
+  try {
+    await requireAuth();
+  } catch (error) {
+    redirect("/auth?redirect=/dashboard/saved");
+  }
+
+  return <SavedJobsContent />;
 }

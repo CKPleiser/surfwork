@@ -7,7 +7,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -458,9 +457,6 @@ function OrganizationEditForm({ params }: OrganizationEditPageProps) {
 }
 
 export default function OrganizationEditPage({ params }: OrganizationEditPageProps) {
-  return (
-    <AuthGuard>
-      <OrganizationEditForm params={params} />
-    </AuthGuard>
-  );
+  // OrganizationEditForm already has ownership verification internally
+  return <OrganizationEditForm params={params} />;
 }

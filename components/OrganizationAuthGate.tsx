@@ -56,7 +56,7 @@ export function OrganizationAuthGate({ children, redirectTo }: OrganizationAuthG
 
   const handleSignIn = () => {
     const redirect = redirectTo || window.location.pathname;
-    router.push(`/login?redirect=${encodeURIComponent(redirect)}`);
+    router.push(`/auth?redirect=${encodeURIComponent(redirect)}`);
   };
 
   // Loading state
@@ -126,7 +126,7 @@ export function OrganizationAuthGate({ children, redirectTo }: OrganizationAuthG
 
                 <p className="text-sm text-gray-500 mt-6">
                   Don&apos;t have an organization account?{" "}
-                  <a href="/signup" className="text-ocean-600 hover:text-ocean-700 font-medium underline">
+                  <a href="/organizations/signup" className="text-ocean-600 hover:text-ocean-700 font-medium underline">
                     Create one now
                   </a>
                 </p>

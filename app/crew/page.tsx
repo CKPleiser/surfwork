@@ -23,7 +23,7 @@ export default function CrewPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button
               size="lg"
-              onClick={() => router.push("/auth")}
+              onClick={() => router.push("/organizations/signup")}
               className="gap-2 px-8 text-base"
             >
               <Building2 className="h-5 w-5" />
@@ -200,7 +200,7 @@ export default function CrewPage() {
             <div className="text-center mt-12">
               <Button
                 size="lg"
-                onClick={() => router.push("/auth")}
+                onClick={() => router.push("/organizations/signup")}
                 className="gap-2 px-8 text-base"
               >
                 <Building2 className="h-5 w-5" />

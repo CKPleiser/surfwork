@@ -1,4 +1,3 @@
-import { AuthGuard } from "@/components/AuthGuard";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -363,9 +362,6 @@ async function AdminContent() {
 }
 
 export default function AdminPage() {
-  return (
-    <AuthGuard>
-      <AdminContent />
-    </AuthGuard>
-  );
+  // AdminContent already has server-side auth checks internally
+  return <AdminContent />;
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -503,9 +502,6 @@ function EditJobForm() {
 }
 
 export default function EditJobPage() {
-  return (
-    <AuthGuard>
-      <EditJobForm />
-    </AuthGuard>
-  );
+  // EditJobForm already has ownership verification internally
+  return <EditJobForm />;
 }

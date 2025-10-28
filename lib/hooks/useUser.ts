@@ -7,19 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import { queryKeys } from "@/lib/query-keys";
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  display_name: string;
-  avatar_url: string | null;
-  kind: "person" | "org";
-  country: string | null;
-  bio: string | null;
-  slug: string;
-  onboarding_completed: boolean;
-  is_admin: boolean;
-}
+import type { UserProfile } from "@/lib/types/user";
 
 async function fetchUser(): Promise<UserProfile | null> {
   const supabase = createClient();
@@ -34,7 +22,7 @@ async function fetchUser(): Promise<UserProfile | null> {
     return null;
   }
 
-  // Fetch profile data
+  // Fetch profile data with retry logic
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("*")
@@ -43,20 +31,33 @@ async function fetchUser(): Promise<UserProfile | null> {
 
   if (profileError || !profile) {
     console.error("[useUser] Profile fetch error:", profileError);
+
+    // If auth session exists but profile fetch failed, throw error to trigger React Query retry
+    // This prevents AuthGuard from thinking user is not authenticated
+    if (profileError) {
+      throw new Error(`Profile fetch failed: ${profileError.message}`);
+    }
+
+    // If no profile exists at all, return null (truly not authenticated)
     return null;
   }
 
   return {
     id: profile.id,
-    email: profile.email || session.user.email || "",
-    display_name: profile.display_name,
-    avatar_url: profile.avatar_url,
     kind: profile.kind,
+    display_name: profile.display_name,
+    first_name: profile.first_name,
+    last_name: profile.last_name,
+    avatar_url: profile.avatar_url,
+    email: profile.email || session.user.email || "",
+    slug: profile.slug,
     country: profile.country,
     bio: profile.bio,
-    slug: profile.slug,
-    onboarding_completed: profile.onboarding_completed,
+    about: profile.about,
+    is_public: profile.is_public,
     is_admin: profile.is_admin,
+    skills: profile.skills,
+    links: profile.links,
   };
 }
 
@@ -70,6 +71,8 @@ export function useUser() {
     staleTime: 2 * 60 * 1000, // 2 minutes - user data should be relatively fresh
     gcTime: 10 * 60 * 1000, // 10 minutes
     refetchOnMount: true, // Always check for fresh user data on component mount
+    retry: 2, // Retry twice on profile fetch errors to handle transient failures
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 3000), // Exponential backoff: 1s, 2s max 3s
   });
 
   useEffect(() => {
