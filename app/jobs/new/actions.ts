@@ -11,7 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { jobFormSchema, type JobFormData } from "@/lib/validations/job";
 
 export async function createJob(formData: JobFormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate form data
   const validation = jobFormSchema.safeParse(formData);

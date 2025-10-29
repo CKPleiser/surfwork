@@ -16,7 +16,7 @@ interface JobPreviewPageProps {
 }
 
 export default async function JobPreviewPage({ params }: JobPreviewPageProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch the job
   const { data: job } = await supabase

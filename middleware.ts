@@ -1,87 +1,52 @@
-/**
- * Middleware - Session Management & Route Protection
- *
- * Best practices for Next.js 14 + Supabase SSR:
- * 1. Always call updateSession() to refresh auth tokens
- * 2. Use getUser() for authoritative session validation (not cookie checks)
- * 3. Keep middleware lean - validate auth, don't fetch data
- * 4. Server Components handle fine-grained authorization
- */
+// middleware.ts
+import { NextResponse, type NextRequest } from "next/server";
 
-import { type NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
+// If you localize routes, add locale prefixes like: `/:path*` via config.matcher
+const PROTECTED = [/^\/dashboard(?:\/|$)/, /^\/settings(?:\/|$)/, /^\/jobs\/new(?:\/|$)/, /^\/jobs\/[^/]+\/edit(?:\/|$)/, /^\/organizations\/[^/]+\/edit(?:\/|$)/];
 
-// Protected route patterns requiring authentication
-const PROTECTED_ROUTES = [
-  /^\/dashboard(\/|$)/,
-  /^\/settings(\/|$)/,
-  /^\/jobs\/new(\/|$)/,
-  /^\/jobs\/[^/]+\/edit(\/|$)/,
-  /^\/organizations\/[^/]+\/edit(\/|$)/,
-];
+function isProtectedPath(pathname: string) {
+  return PROTECTED.some((re) => re.test(pathname));
+}
 
-export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.clone();
-  const pathname = url.pathname;
-
-  // Check if route requires protection
-  const isProtectedRoute = PROTECTED_ROUTES.some((pattern) => pattern.test(pathname));
-
-  // Create Supabase client with cookie handling
-  let supabaseResponse = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
+// Minimal, presence-only cookie check. Real validation happens on the server.
+function hasSupabaseAuthCookie(req: NextRequest) {
+  // Supabase SSR uses cookies with format: sb-<project-ref>-auth-token
+  // In local dev: sb-localhost-auth-token
+  return req.cookies.getAll().some(c =>
+    c.name.startsWith("sb-") && c.name.includes("auth-token")
   );
+}
 
-  // CRITICAL: Always call getUser() to refresh session
-  // This validates the JWT and updates cookies if needed
-  const { data: { user } } = await supabase.auth.getUser();
+export function middleware(req: NextRequest) {
+  // Only guard navigations that render pages
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return NextResponse.next();
+  }
 
-  // Redirect to auth if accessing protected route without valid session
-  if (isProtectedRoute && !user) {
-    url.pathname = '/auth';
-    url.searchParams.set('redirect', pathname);
+  const { nextUrl } = req;
+  const pathname = nextUrl.pathname;
+
+  if (!isProtectedPath(pathname)) {
+    return NextResponse.next();
+  }
+
+  if (!hasSupabaseAuthCookie(req)) {
+    const url = nextUrl.clone();
+    url.pathname = "/auth";
+    url.searchParams.set("next", pathname); // keep param name consistent across app
     return NextResponse.redirect(url);
   }
 
-  // Return response with updated cookies
-  return supabaseResponse;
+  return NextResponse.next();
 }
 
+// Run only where needed. Add locales or basePath if applicable.
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/dashboard/:path*",
+    "/settings/:path*",
+    "/jobs/new",
+    "/jobs/:id/edit",
+    "/organizations/:id/edit",
   ],
-  // Explicitly use Node.js runtime to avoid Edge Runtime warnings
-  runtime: 'nodejs',
-}
+};

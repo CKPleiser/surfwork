@@ -22,7 +22,7 @@ interface JobDetailPageProps {
 }
 
 async function getJob(id: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch the job (allow viewing pending jobs for now - moderation can be added later)
   const { data: jobData, error: jobError } = await supabase

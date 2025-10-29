@@ -68,7 +68,7 @@ function getVideoEmbedUrl(url: string): string | null {
 }
 
 export default async function OrganizationProfile({ params }: OrganizationProfileProps) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch organization data by slug
   const { data: organization } = await supabase

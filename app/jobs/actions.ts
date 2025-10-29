@@ -9,7 +9,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveJob(jobId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get authenticated user
   const {
@@ -47,7 +47,7 @@ export async function saveJob(jobId: string) {
 }
 
 export async function unsaveJob(jobId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get authenticated user
   const {
@@ -84,7 +84,7 @@ export async function unsaveJob(jobId: string) {
 }
 
 export async function checkIfJobSaved(jobId: string): Promise<boolean> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get authenticated user
   const {

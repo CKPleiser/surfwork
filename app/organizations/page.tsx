@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CheckCircle, ExternalLink } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { OrganizationCardSkeleton } from "@/components/skeletons/OrganizationCardSkeleton";
 
@@ -31,6 +30,8 @@ export default function OrganizationsPage() {
   useEffect(() => {
     async function fetchOrganizations() {
       try {
+        // Dynamic import to keep Supabase out of commons chunk
+        const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
 
         // Fetch all organizations

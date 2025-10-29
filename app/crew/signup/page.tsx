@@ -26,43 +26,19 @@ import { useCrewSignup } from "@/lib/mutations/useSignup";
 import {
   crewSignupSchema,
   type CrewSignupFormData,
-} from "@/lib/validations/crew-signup";
-import { COUNTRIES } from "@/lib/constants";
+} from "./schema";
+import {
+  COUNTRIES,
+  CREW_ROLE_OPTIONS,
+  CREW_REGION_OPTIONS,
+  CREW_COMPENSATION_OPTIONS,
+} from "@/lib/constants";
 import { FormSection } from "@/components/forms/FormSection";
 import { PasswordFields } from "@/components/forms/PasswordFields";
 import { FileUploadButton } from "@/components/forms/FileUploadButton";
 import { OptionalBadge } from "@/components/forms/OptionalBadge";
 import { uploadAvatar } from "./actions";
 import { errorTracker } from "@/lib/utils/error-tracking";
-
-const ROLE_OPTIONS = [
-  { value: "coach", label: "Surf Coach / Instructor" },
-  { value: "media", label: "Photographer / Videographer" },
-  { value: "camp_staff", label: "Chef / Kitchen Staff" },
-  { value: "ops", label: "Camp Manager / Operations" },
-  { value: "other", label: "Other (Yoga, Massage, etc.)" },
-] as const;
-
-const REGION_OPTIONS = [
-  "Portugal",
-  "Spain",
-  "Morocco",
-  "Canary Islands",
-  "France",
-  "Bali",
-  "Costa Rica",
-  "Nicaragua",
-  "Mexico",
-  "Sri Lanka",
-  "Anywhere",
-];
-
-const COMPENSATION_OPTIONS = [
-  { value: "salary", label: "Paid (salary/wage)" },
-  { value: "day_rate", label: "Day Rate" },
-  { value: "exchange", label: "Room & Meals" },
-  { value: "volunteer", label: "Volunteer" },
-] as const;
 
 export default function CrewSignupPage() {
   const router = useRouter();
@@ -308,7 +284,7 @@ export default function CrewSignupPage() {
             <fieldset>
               <legend className="text-sm font-medium text-gray-900 mb-2">What&apos;s your role? *</legend>
               <div className="flex flex-wrap gap-2">
-                {ROLE_OPTIONS.map((role) => (
+                {CREW_ROLE_OPTIONS.map((role) => (
                   <button
                     key={role.value}
                     type="button"
@@ -456,7 +432,7 @@ export default function CrewSignupPage() {
                 <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <div className="flex flex-wrap gap-2">
-                {REGION_OPTIONS.map((region) => (
+                {CREW_REGION_OPTIONS.map((region) => (
                   <button
                     key={region}
                     type="button"
@@ -482,7 +458,7 @@ export default function CrewSignupPage() {
                 <Badge variant="secondary" className="text-[10px] sm:text-xs">Optional</Badge>
               </div>
               <div className="flex flex-wrap gap-2">
-                {COMPENSATION_OPTIONS.map((comp) => (
+                {CREW_COMPENSATION_OPTIONS.map((comp) => (
                   <button
                     key={comp.value}
                     type="button"

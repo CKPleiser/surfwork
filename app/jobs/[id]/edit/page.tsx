@@ -10,7 +10,6 @@ import { ArrowLeft, Check, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useUpdateJob } from "@/lib/mutations/useUpdateJob";
 import { useDeleteJob } from "@/lib/mutations/useDeleteJob";
-import { createClient } from "@/lib/supabase/client";
 import type { JobFormData } from "@/lib/validations/job";
 
 const SPORTS_OPTIONS = [
@@ -38,6 +37,8 @@ function EditJobForm() {
   useEffect(() => {
     async function loadJob() {
       try {
+        // Dynamic import to keep Supabase out of commons chunk
+        const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         const { data: job, error } = await supabase
           .from("jobs")

@@ -27,7 +27,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { createClient } from "@/lib/supabase/client";
 import { DashboardJobCardSkeleton } from "@/components/skeletons/DashboardJobCardSkeleton";
 import type { UserWithProfile } from "@/lib/auth/session";
 
@@ -48,6 +47,8 @@ export function DashboardClient({ user }: DashboardClientProps) {
   const handleCreateOrganization = async () => {
     setCreatingOrganization(true);
     try {
+      // Dynamic import to keep Supabase out of commons chunk
+      const { createClient } = await import("@/lib/supabase/client");
       const supabase = createClient();
 
       // Generate slug from organization name

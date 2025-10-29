@@ -8,7 +8,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { crewSignup, type SignupResult } from "@/app/crew/signup/actions";
 import { organizationSignup } from "@/app/organizations/signup/actions";
-import type { CrewSignupFormData } from "@/lib/validations/crew-signup";
+import type { CrewSignupFormData } from "@/app/crew/signup/schema";
 import type { OrganizationSignupFormData } from "@/lib/validations/organization-signup";
 import { errorTracker } from "@/lib/utils/error-tracking";
 

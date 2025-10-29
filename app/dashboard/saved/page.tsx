@@ -11,7 +11,7 @@ async function SavedJobsContent() {
   // Server-side auth check
   const user = await requireAuth();
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch saved jobs with job details
   const { data: savedJobs, error } = await supabase

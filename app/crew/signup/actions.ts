@@ -15,7 +15,7 @@ import {
 } from "@/lib/auth/signup-helpers";
 import { errorTracker } from "@/lib/utils/error-tracking";
 import { uploadAvatar } from "@/lib/storage/upload-helpers";
-import type { CrewSignupFormData } from "@/lib/validations/crew-signup";
+import type { CrewSignupFormData } from "./schema";
 
 export { uploadAvatar };
 

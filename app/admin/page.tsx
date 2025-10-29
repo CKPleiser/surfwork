@@ -11,7 +11,7 @@ async function approveJob(formData: FormData) {
   "use server";
 
   const jobId = formData.get("jobId") as string;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get current user
   const {
@@ -45,7 +45,7 @@ async function rejectJob(formData: FormData) {
   "use server";
 
   const jobId = formData.get("jobId") as string;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get current user
   const {
@@ -76,7 +76,7 @@ async function rejectJob(formData: FormData) {
 }
 
 async function AdminContent() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get current user
   const {

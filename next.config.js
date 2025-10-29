@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Security headers
@@ -39,8 +43,7 @@ const nextConfig = {
       '@supabase/supabase-js',
       'date-fns',
     ],
-    // Enable automatic tree-shaking optimizations
-    optimizeCss: true,
+    // Note: optimizeCss removed - requires critters package and can cause build issues
   },
 
   // Reduce module resolution overhead
@@ -48,6 +51,12 @@ const nextConfig = {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{kebabCase member}}',
       skipDefaultConversion: true,
+    },
+    'date-fns': {
+      transform: 'date-fns/{{member}}',
+    },
+    'lodash': {
+      transform: 'lodash/{{member}}',
     },
   },
 
@@ -112,4 +121,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withBundleAnalyzer(nextConfig)

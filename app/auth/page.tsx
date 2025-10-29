@@ -75,19 +75,25 @@ function SigninContent() {
     setIsPending(true);
     setError(null);
 
-    const result = await signInWithPassword(data.email, data.password, data.rememberMe || false);
+    try {
+      const result = await signInWithPassword(data.email, data.password, data.rememberMe || false);
 
-    if (!result.success) {
-      setError(result.error || "Sign in failed");
+      if (!result.success) {
+        setError(result.error || "Sign in failed");
+        setIsPending(false);
+        return;
+      }
+
+      // Invalidate and refetch user data to ensure React Query has latest auth state
+      await queryClient.invalidateQueries({ queryKey: queryKeys.user.current() });
+
+      // Redirect to intended page or dashboard
+      router.push(result.redirectTo || redirectTo);
+    } catch (error) {
+      console.error("Signin error:", error);
+      setError("An unexpected error occurred. Please try again.");
       setIsPending(false);
-      return;
     }
-
-    // Invalidate and refetch user data to ensure React Query has latest auth state
-    await queryClient.invalidateQueries({ queryKey: queryKeys.user.current() });
-
-    // Redirect to intended page or dashboard
-    router.push(result.redirectTo || redirectTo);
   };
 
   const onSubmitMagicLink = async () => {

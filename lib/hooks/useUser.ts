@@ -1,15 +1,18 @@
 /**
  * useUser Hook
  * Manages current user authentication state and profile data
+ *
+ * Note: Dynamically imports Supabase client to prevent it from landing in commons chunk
  */
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/lib/supabase/client";
 import { useEffect } from "react";
 import { queryKeys } from "@/lib/query-keys";
 import type { UserProfile } from "@/lib/types/user";
 
 async function fetchUser(): Promise<UserProfile | null> {
+  // Dynamic import to keep Supabase out of commons chunk
+  const { createClient } = await import("@/lib/supabase/client");
   const supabase = createClient();
 
   // Get auth session
@@ -63,7 +66,6 @@ async function fetchUser(): Promise<UserProfile | null> {
 
 export function useUser() {
   const queryClient = useQueryClient();
-  const supabase = createClient();
 
   const query = useQuery({
     queryKey: queryKeys.user.current(),
@@ -76,23 +78,32 @@ export function useUser() {
   });
 
   useEffect(() => {
-    // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") {
-        // Refetch user data when signed in
-        queryClient.invalidateQueries({ queryKey: queryKeys.user.current() });
-      } else if (event === "SIGNED_OUT") {
-        // Clear user data when signed out
-        queryClient.setQueryData(queryKeys.user.current(), null);
-      }
-    });
+    let subscription: any;
+
+    // Dynamic import to keep Supabase out of commons chunk
+    (async () => {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+
+      const {
+        data: { subscription: sub },
+      } = supabase.auth.onAuthStateChange((event) => {
+        if (event === "SIGNED_IN") {
+          // Refetch user data when signed in
+          queryClient.invalidateQueries({ queryKey: queryKeys.user.current() });
+        } else if (event === "SIGNED_OUT") {
+          // Clear user data when signed out
+          queryClient.setQueryData(queryKeys.user.current(), null);
+        }
+      });
+
+      subscription = sub;
+    })();
 
     return () => {
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
-  }, [supabase, queryClient]);
+  }, [queryClient]);
 
   return {
     user: query.data,

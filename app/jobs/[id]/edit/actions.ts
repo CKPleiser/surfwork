@@ -15,7 +15,7 @@ import { jobFormSchema, type JobFormData } from "@/lib/validations/job";
  * Verifies ownership before allowing update
  */
 export async function updateJob(jobId: string, formData: JobFormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate form data
   const validatedData = jobFormSchema.parse(formData);
@@ -109,7 +109,7 @@ export async function updateJob(jobId: string, formData: JobFormData) {
  * Verifies ownership before allowing deletion
  */
 export async function deleteJob(jobId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Get authenticated user
   const {

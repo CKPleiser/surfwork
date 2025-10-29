@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { X, Search as SearchIcon, Bell, MapPin, Home, DollarSign } from "lucide-react";
 import type { Job } from "@/app/actions/jobs";
+import { HOME_ROLES, HOME_ROLE_LABELS, HOME_TAGS } from "@/lib/constants";
 
 interface HomeClientProps {
   initialJobs: Job[];
@@ -36,29 +37,22 @@ export function HomeClient({ initialJobs }: HomeClientProps) {
   );
   const [sortBy, setSortBy] = useState("newest");
 
-  const roles = ["all", "coach", "media", "camp_staff", "ops", "other"];
-  const roleLabels: Record<string, string> = {
-    all: "All Roles",
-    coach: "Coach",
-    media: "Media",
-    camp_staff: "Camp Staff",
-    ops: "Operations",
-    other: "Other",
-  };
-
-  const tags = ["chef", "shaper", "photographer", "repair", "manager", "yoga", "ISA L1", "ISA L2"];
-
   // Update URL params when filters change
+  // Debounced URL sync to prevent excessive router.replace calls
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set("search", searchQuery);
-    if (selectedRole !== "all") params.set("role", selectedRole);
-    if (selectedTags.length > 0) params.set("tags", selectedTags.join(","));
-    if (locationFilter) params.set("location", locationFilter);
-    if (accommodationFilter !== "all") params.set("accommodation", accommodationFilter);
+    const timeoutId = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.set("search", searchQuery);
+      if (selectedRole !== "all") params.set("role", selectedRole);
+      if (selectedTags.length > 0) params.set("tags", selectedTags.join(","));
+      if (locationFilter) params.set("location", locationFilter);
+      if (accommodationFilter !== "all") params.set("accommodation", accommodationFilter);
 
-    const newUrl = params.toString() ? `/?${params.toString()}` : "/";
-    router.replace(newUrl, { scroll: false });
+      const newUrl = params.toString() ? `/?${params.toString()}` : "/";
+      router.replace(newUrl, { scroll: false });
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
   }, [searchQuery, selectedRole, selectedTags, locationFilter, accommodationFilter, router]);
 
   const toggleTag = useCallback((tag: string) => {
@@ -71,15 +65,21 @@ export function HomeClient({ initialJobs }: HomeClientProps) {
   const filteredJobs = useMemo(() => {
     if (!jobs) return [];
 
+    // Pre-compute lowercase filter values to avoid repeated toLowerCase() calls
+    const searchLower = searchQuery.toLowerCase();
+    const locationFilterLower = locationFilter.toLowerCase();
+    const selectedTagsLower = selectedTags.map(t => t.toLowerCase());
+
     let filtered = jobs.filter((job) => {
       const matchesSearch = !searchQuery ||
-        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.location.toLowerCase().includes(searchQuery.toLowerCase());
+        job.title.toLowerCase().includes(searchLower) ||
+        job.location.toLowerCase().includes(searchLower);
       const matchesRole = selectedRole === "all" || job.role === selectedRole;
-      const matchesTags = selectedTags.length === 0 || selectedTags.some((tag) =>
-        job.tags.map(t => t.toLowerCase()).includes(tag.toLowerCase())
-      );
-      const matchesLocation = !locationFilter || job.location.toLowerCase().includes(locationFilter.toLowerCase());
+      const matchesTags = selectedTags.length === 0 ||
+        selectedTagsLower.some((tag) =>
+          job.tags.some(t => t.toLowerCase() === tag)
+        );
+      const matchesLocation = !locationFilter || job.location.toLowerCase().includes(locationFilterLower);
       const matchesAccommodation =
         accommodationFilter === "all" ||
         (accommodationFilter === "yes" && job.accommodation) ||
@@ -111,7 +111,6 @@ export function HomeClient({ initialJobs }: HomeClientProps) {
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement newsletter subscription
-    console.log("Newsletter signup:", { email: newsletterEmail, frequency: newsletterFrequency });
   };
 
   const handleLocationClick = (location: string) => {
@@ -263,9 +262,9 @@ export function HomeClient({ initialJobs }: HomeClientProps) {
                       onChange={(e) => setSelectedRole(e.target.value)}
                       className="w-full px-3 py-2 bg-background border-2 border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ocean-500/20 focus:border-ocean-500"
                     >
-                      {roles.map((role) => (
+                      {HOME_ROLES.map((role) => (
                         <option key={role} value={role}>
-                          {roleLabels[role]}
+                          {HOME_ROLE_LABELS[role]}
                         </option>
                       ))}
                     </select>
@@ -317,7 +316,7 @@ export function HomeClient({ initialJobs }: HomeClientProps) {
                   <div>
                     <Label className="mb-3 block font-semibold">Tags</Label>
                     <div className="flex flex-wrap gap-2">
-                      {tags.map((tag) => (
+                      {HOME_TAGS.map((tag) => (
                         <Badge
                           key={tag}
                           variant={selectedTags.includes(tag) ? "default" : "outline"}

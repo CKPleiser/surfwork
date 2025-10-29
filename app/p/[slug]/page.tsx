@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -47,11 +46,14 @@ export default function PersonProfile({ params }: PersonProfileProps) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [candidatePitch, setCandidatePitch] = useState<CandidatePitch | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     async function fetchProfile() {
       try {
+        // Dynamic import to keep Supabase out of commons chunk
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+
         // Fetch profile data by ID (person type only)
         const { data: profileData } = await supabase
           .from("profiles")

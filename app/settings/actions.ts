@@ -13,7 +13,7 @@ import { profileSchema, type ProfileFormData } from "@/lib/validations/profile";
  * Update user profile
  */
 export async function updateProfile(formData: ProfileFormData) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Validate form data
   const validatedData = profileSchema.parse(formData);
