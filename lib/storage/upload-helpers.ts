@@ -136,8 +136,8 @@ export async function uploadAvatar(
 ): Promise<UploadResult> {
   return uploadImage({
     file,
-    bucket: "public",
-    basePath: `profiles/${profileId}`,
+    bucket: "avatars",
+    basePath: profileId,
     maxSizeMB: 2,
     allowedTypes: ["image/"],
   });
