@@ -96,24 +96,7 @@ export async function crewSignup(data: CrewSignupFormData): Promise<SignupResult
       return { error: handleDatabaseError(profileError, "profile creation") };
     }
 
-    // 5. Insert roles (multiple rows, using service role)
-    if (data.roles && data.roles.length > 0) {
-      const roleRows = data.roles.map((role) => ({
-        profile_id: userId,
-        role: role,
-      }));
-
-      const { error: rolesError } = await supabaseAdmin
-        .from("profile_roles")
-        .insert(roleRows);
-
-      if (rolesError) {
-        console.error("[crewSignup] Roles error:", rolesError);
-        return { error: handleDatabaseError(rolesError, "role assignment") };
-      }
-    }
-
-    // 6. Create candidate pitch (using service role to bypass RLS)
+    // 5. Create candidate pitch (using service role to bypass RLS)
     const { error: pitchError } = await supabaseAdmin
       .from("candidate_pitches")
       .insert({
@@ -128,6 +111,7 @@ export async function crewSignup(data: CrewSignupFormData): Promise<SignupResult
         contact_value: data.contact_value,
         attributes: {
           open_to: data.open_to || [],
+          roles: data.roles || [],
         },
       });
 

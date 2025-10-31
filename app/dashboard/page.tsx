@@ -1,22 +1,12 @@
 /**
  * Dashboard Page - Server Component Pattern
- * Demonstrates server-first authentication with zero-delay auth state
+ * Routes to appropriate dashboard based on user type (crew vs organization)
  */
 
 import { getUser } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
-import dynamic from "next/dynamic";
-import { Loader2 } from "lucide-react";
-
-// Lazy load the heavy DashboardClient component
-const DashboardClient = dynamic(() => import("./DashboardClient").then(mod => ({ default: mod.DashboardClient })), {
-  loading: () => (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  ),
-  ssr: false, // Client-only component, no SSR needed
-});
+import { CrewDashboard } from "./CrewDashboard";
+import { OrgDashboard } from "./OrgDashboard";
 
 export default async function DashboardPage() {
   // Server-side auth check with React cache() - zero delay, no flicker
@@ -27,6 +17,14 @@ export default async function DashboardPage() {
     redirect("/auth?redirect=/dashboard");
   }
 
-  // Pass user to Client Component - no React Query needed for initial render
-  return <DashboardClient user={user} />;
+  // Route to appropriate dashboard based on user type
+  // Organizations have profile.kind === "org"
+  // Crew members have profile.kind === "person"
+  const isOrganization = user.profile?.kind === "org";
+
+  if (isOrganization) {
+    return <OrgDashboard user={user} />;
+  }
+
+  return <CrewDashboard user={user} />;
 }

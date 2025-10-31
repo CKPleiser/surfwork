@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, CheckCircle, ExternalLink } from "lucide-react";
@@ -15,6 +16,7 @@ interface OrganizationWithJobs {
   city: string | null;
   country: string | null;
   verified: boolean;
+  logo_url: string | null;
   activeJobs: {
     id: string;
     title: string;
@@ -37,7 +39,7 @@ export default function OrganizationsPage() {
         // Fetch all organizations
         const { data: dbOrganizations, error: orgsError } = await supabase
           .from("organizations")
-          .select("id, name, slug, city, country, verified")
+          .select("id, name, slug, city, country, verified, logo_url")
           .order("created_at", { ascending: false });
 
         if (orgsError) {
@@ -116,9 +118,21 @@ export default function OrganizationsPage() {
                   <div className="space-y-6">
                     {/* Header */}
                     <div className="flex items-start gap-4">
-                      <div className="h-16 w-16 rounded-full bg-gradient-ocean flex items-center justify-center text-2xl text-white font-bold flex-shrink-0 shadow-lg shadow-ocean-500/20 ring-2 ring-ocean-100 group-hover:ring-ocean-300 transition-all">
-                        {organization.name.charAt(0).toUpperCase()}
-                      </div>
+                      {organization.logo_url ? (
+                        <div className="relative h-16 w-16 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg shadow-ocean-500/20 ring-2 ring-ocean-100 group-hover:ring-ocean-300 transition-all bg-white overflow-hidden">
+                          <Image
+                            src={organization.logo_url}
+                            alt={`${organization.name} logo`}
+                            fill
+                            className="object-contain p-2"
+                            sizes="64px"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-16 w-16 rounded-full bg-gradient-ocean flex items-center justify-center text-2xl text-white font-bold flex-shrink-0 shadow-lg shadow-ocean-500/20 ring-2 ring-ocean-100 group-hover:ring-ocean-300 transition-all">
+                          {organization.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-xl font-bold truncate group-hover:text-ocean-600 transition-colors">

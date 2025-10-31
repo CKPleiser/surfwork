@@ -28,6 +28,9 @@ import { useOrganization } from "@/lib/hooks/useOrganization";
 import { useUpdateOrganization } from "@/lib/mutations/useUpdateOrganization";
 import { MediaUploadZone } from "@/components/organization/MediaUploadZone";
 import { VideoUrlInput } from "@/components/organization/VideoUrlInput";
+import { FileUploadButton } from "@/components/forms/FileUploadButton";
+import { uploadOrgLogo } from "@/app/organizations/signup/actions";
+import { errorTracker } from "@/lib/utils/error-tracking";
 import type { OrganizationProfileFormData } from "@/lib/validations/organization";
 
 interface OrganizationEditPageProps {
@@ -43,6 +46,8 @@ function OrganizationEditForm({ params }: OrganizationEditPageProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   // Check authorization
   const isAuthorized = user && organization && organization.owner_profile_id === user.id;
@@ -66,6 +71,11 @@ function OrganizationEditForm({ params }: OrganizationEditPageProps) {
         gallery_images: organization.gallery_images || [],
         video_urls: organization.video_urls || [],
       });
+
+      // Set existing logo preview if available
+      if (organization.logo_url) {
+        setLogoPreview(organization.logo_url);
+      }
     }
   }, [organization]);
 
@@ -75,12 +85,31 @@ function OrganizationEditForm({ params }: OrganizationEditPageProps) {
     setSuccessMessage(null);
 
     try {
+      // Upload logo first if there's a new file
+      if (logoFile) {
+        const formData = new FormData();
+        formData.append("file", logoFile);
+        formData.append("orgId", params.id);
+
+        const uploadResult = await uploadOrgLogo(formData);
+        if (uploadResult.error) {
+          errorTracker.logError("Logo upload failed during edit", { error: uploadResult.error, organizationId: params.id });
+          setErrors({ submit: `Failed to upload logo: ${uploadResult.error}` });
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+      }
+
+      // Update other fields
       await updateMutation.mutateAsync({
         organizationId: params.id,
         data: formData,
       });
 
       setSuccessMessage("Organization profile updated successfully!");
+
+      // Clear logo file state after successful update
+      setLogoFile(null);
 
       // Clear success message after 3 seconds
       setTimeout(() => setSuccessMessage(null), 3000);
@@ -214,6 +243,29 @@ function OrganizationEditForm({ params }: OrganizationEditPageProps) {
                   />
                   <p className="text-xs text-muted-foreground">
                     Your official organization name
+                  </p>
+                </div>
+
+                {/* Logo Upload */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-bold text-ocean-900">
+                    Organization Logo
+                  </Label>
+                  <FileUploadButton
+                    variant="logo"
+                    maxSizeMB={5}
+                    onFileSelect={(file, previewUrl) => {
+                      setLogoFile(file);
+                      setLogoPreview(previewUrl);
+                    }}
+                    onFileRemove={() => {
+                      setLogoFile(null);
+                      setLogoPreview(organization?.logo_url || null);
+                    }}
+                    previewUrl={logoPreview}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Upload your organization logo (max 5MB). Recommended size: 200x200px
                   </p>
                 </div>
 

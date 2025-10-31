@@ -112,6 +112,7 @@ export type Database = {
           instagram: string | null
           lat: number | null
           lng: number | null
+          logo_url: string | null
           name: string
           org_type: string
           owner_profile_id: string
@@ -138,6 +139,7 @@ export type Database = {
           instagram?: string | null
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
           name: string
           org_type?: string
           owner_profile_id: string
@@ -164,6 +166,7 @@ export type Database = {
           instagram?: string | null
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
           name?: string
           org_type?: string
           owner_profile_id?: string

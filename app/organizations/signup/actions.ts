@@ -86,7 +86,7 @@ export async function organizationSignup(data: OrganizationSignupFormData): Prom
       .from("profiles")
       .upsert({
         id: userId,
-        kind: "person",
+        kind: "org",
         display_name: data.contact_name,
         email: data.email,
       })
@@ -115,7 +115,7 @@ export async function organizationSignup(data: OrganizationSignupFormData): Prom
 
 /**
  * Upload organization logo - wrapper for FormData compatibility
- * Extracts file and orgId from FormData and calls the shared upload helper
+ * Extracts file and orgId from FormData, uploads to storage, and saves URL to database
  */
 export async function uploadOrgLogo(
   formData: FormData
@@ -127,5 +127,24 @@ export async function uploadOrgLogo(
     return { error: "Missing file or organization ID" };
   }
 
-  return uploadOrgLogoHelper(file, orgId);
+  // Upload to storage
+  const uploadResult = await uploadOrgLogoHelper(file, orgId);
+
+  if (uploadResult.error || !uploadResult.url) {
+    return uploadResult;
+  }
+
+  // Save URL to database
+  const supabaseAdmin = createServiceRoleClient();
+  const { error: updateError } = await supabaseAdmin
+    .from("organizations")
+    .update({ logo_url: uploadResult.url })
+    .eq("id", orgId);
+
+  if (updateError) {
+    errorTracker.logError("Failed to save logo URL to database", { error: updateError, orgId });
+    return { error: "Logo uploaded but failed to save URL" };
+  }
+
+  return uploadResult;
 }

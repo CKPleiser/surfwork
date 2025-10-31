@@ -125,11 +125,23 @@ export default async function OrganizationProfile({ params }: OrganizationProfil
             <div className="space-y-8">
               {/* Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <Avatar className="h-24 w-24 ring-4 ring-ocean-100">
-                  <AvatarFallback className="bg-gradient-ocean text-white text-2xl font-bold">
-                    {organization.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
+                {organization.logo_url ? (
+                  <div className="relative h-24 w-24 ring-4 ring-ocean-100 rounded-full overflow-hidden bg-white">
+                    <Image
+                      src={organization.logo_url}
+                      alt={`${organization.name} logo`}
+                      fill
+                      className="object-contain p-2"
+                      sizes="96px"
+                    />
+                  </div>
+                ) : (
+                  <Avatar className="h-24 w-24 ring-4 ring-ocean-100">
+                    <AvatarFallback className="bg-gradient-ocean text-white text-2xl font-bold">
+                      {organization.name.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
                     <h1 className="text-4xl font-bold bg-gradient-ocean bg-clip-text text-transparent">
