@@ -29,6 +29,7 @@ import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { DashboardJobCardSkeleton } from "@/components/skeletons/DashboardJobCardSkeleton";
 import type { UserWithProfile } from "@/lib/auth/session";
+import { OrganizationApplicationsList } from "@/components/applications/organization-applications-list";
 
 interface DashboardClientProps {
   user: UserWithProfile;
@@ -498,17 +499,23 @@ export function DashboardClient({ user }: DashboardClientProps) {
 
               {activeTab === "applications" && (
                 <div className="space-y-6">
-                  <h2 className="text-3xl font-bold bg-gradient-ocean bg-clip-text text-transparent">My Applications</h2>
-                  <Card className="p-12 text-center bg-white border-2 border-border">
-                    <div className="text-6xl mb-4">📋</div>
-                    <h3 className="text-2xl font-bold mb-2">No applications yet</h3>
-                    <p className="text-muted-foreground mb-6 text-lg">
-                      When you apply to jobs, you&apos;ll see them tracked here
-                    </p>
-                    <Link href="/">
-                      <Button size="lg">Browse Jobs</Button>
-                    </Link>
-                  </Card>
+                  <h2 className="text-3xl font-bold bg-gradient-ocean bg-clip-text text-transparent">
+                    {isOrganization ? "Applications Received" : "My Applications"}
+                  </h2>
+                  {isOrganization ? (
+                    <OrganizationApplicationsList />
+                  ) : (
+                    <Card className="p-12 text-center bg-white border-2 border-border">
+                      <div className="text-6xl mb-4">📋</div>
+                      <h3 className="text-2xl font-bold mb-2">No applications yet</h3>
+                      <p className="text-muted-foreground mb-6 text-lg">
+                        When you apply to jobs, you&apos;ll see them tracked here
+                      </p>
+                      <Link href="/">
+                        <Button size="lg">Browse Jobs</Button>
+                      </Link>
+                    </Card>
+                  )}
                 </div>
               )}
 

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { UserWithProfile } from "@/lib/auth/session";
+import { MyApplicationsList } from "@/components/applications/my-applications-list";
 
 interface CrewDashboardProps {
   user: UserWithProfile;
@@ -320,16 +321,7 @@ export function CrewDashboard({ user }: CrewDashboardProps) {
                   <h2 className="text-3xl font-bold bg-gradient-ocean bg-clip-text text-transparent">
                     My Applications
                   </h2>
-                  <Card className="p-12 text-center bg-white border-2 border-border">
-                    <div className="text-6xl mb-4">📋</div>
-                    <h3 className="text-2xl font-bold mb-2">No applications yet</h3>
-                    <p className="text-muted-foreground mb-6 text-lg">
-                      When you apply to jobs, you&apos;ll see them tracked here
-                    </p>
-                    <Link href="/jobs">
-                      <Button size="lg">Browse Jobs</Button>
-                    </Link>
-                  </Card>
+                  <MyApplicationsList />
                 </div>
               )}
 

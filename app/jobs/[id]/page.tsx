@@ -234,6 +234,7 @@ export default async function JobDetailPage({ params }: JobDetailPageProps) {
                 contactMethod={job.contact}
                 contactValue={job.contact_value}
                 jobTitle={job.title}
+                jobId={job.id}
               />
 
               <p className="text-xs text-center text-muted-foreground">
