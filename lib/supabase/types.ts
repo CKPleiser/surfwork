@@ -249,6 +249,57 @@ export type Database = {
         }
         Relationships: []
       }
+      applications: {
+        Row: {
+          id: string
+          job_id: string
+          crew_id: string
+          status: Database["public"]["Enums"]["application_status"]
+          message: string
+          viewed_at: string | null
+          contacted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          job_id: string
+          crew_id: string
+          status?: Database["public"]["Enums"]["application_status"]
+          message: string
+          viewed_at?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          job_id?: string
+          crew_id?: string
+          status?: Database["public"]["Enums"]["application_status"]
+          message?: string
+          viewed_at?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "applications_crew_id_fkey"
+            columns: ["crew_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       organization_type_stats: {
@@ -265,6 +316,7 @@ export type Database = {
     }
     Enums: {
       accommodation_lvl: "yes" | "no" | "partial"
+      application_status: "pending" | "viewed" | "contacted" | "archived"
       candidate_status: "active" | "archived"
       compensation_type:
         | "salary"
@@ -287,6 +339,7 @@ export type Database = {
 export type ProfileKind = Database["public"]["Enums"]["profile_kind"];
 export type OrganizationType = "school" | "camp" | "shop" | "agency" | "other";
 export type JobStatus = Database["public"]["Enums"]["job_status"];
+export type ApplicationStatus = Database["public"]["Enums"]["application_status"];
 export type RoleType = Database["public"]["Enums"]["role_type"];
 export type CompensationType = Database["public"]["Enums"]["compensation_type"];
 export type AccommodationLevel = Database["public"]["Enums"]["accommodation_lvl"];
@@ -296,8 +349,14 @@ export type ContactMethod = Database["public"]["Enums"]["contact_method"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Organization = Database["public"]["Tables"]["organizations"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type Application = Database["public"]["Tables"]["applications"]["Row"];
 
 // Extended types for common queries
 export interface JobWithOrganization extends Job {
   organization: Organization;
+}
+
+export interface ApplicationWithDetails extends Application {
+  job: Job & { organization: Organization };
+  crew: Profile;
 }
